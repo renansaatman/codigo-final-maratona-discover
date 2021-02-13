@@ -5,7 +5,29 @@ const Modal = {
     close(){
         document.querySelector('.modal-overlay').classList.remove('active')
         Form.clearFields()
-    }
+    },
+    openEdit(index){
+        Storage.temp = Transaction.all[index]
+        document.querySelector('#amount-edit').value = (Transaction.all[index].amount/100).toFixed(2)
+        //console.log(Transaction.all[index].amount)
+        document.querySelector('#description-edit').value = Transaction.all[index].description
+        document.querySelector('#date-edit').value = Transaction.all[index].date.split('/')
+                                                                    .reverse()
+                                                                    .join('-')
+        document.querySelector('.modal-overlay-edit').classList.add('active')
+        Transaction.remove(index)
+    },
+    cancelEdit(){
+        document.querySelector('.modal-overlay-edit').classList.remove('active')
+        FormEdit.clearFields()
+        Transaction.add(Storage.temp)
+    },
+    closeEdit(){
+        document.querySelector('.modal-overlay-edit').classList.remove('active')
+        FormEdit.clearFields()
+        //Transaction.add(Storage.temp)
+    },
+    
 }
 
 const Storage = {
@@ -14,7 +36,8 @@ const Storage = {
     },
     set(transactions) {
         localStorage.setItem("dev.finances:transactions", JSON.stringify(transactions))
-    }
+    },
+    temp: {}
 }
 
 const Transaction = {
@@ -28,6 +51,11 @@ const Transaction = {
         Transaction.all.splice(index, 1)
 
         App.reload()
+    },
+    edit(index) {
+        Modal.openEdit(index)
+        //console.log(Transaction.all[index])
+        //Transaction.all[index].amount = 0
     },
     incomes() {
         let income = 0
@@ -71,6 +99,9 @@ const DOM = {
         <td class="date">${transaction.date}</td>
         <td>
             <img onclick="Transaction.remove(${index})" src="./assets/minus.svg" alt="Remover transação">
+        </td>
+        <td>
+            <img onclick="Transaction.edit(${index})" src="./assets/edit.svg" alt="Editar transação">
         </td>
         `
         return html
@@ -151,6 +182,56 @@ const Form = {
             Transaction.add(transaction)
             //Form.clearFields()
             Modal.close()
+        }
+        catch (error) {
+            alert(error.message)
+        }
+    }
+}
+
+const FormEdit = {
+    description: document.querySelector("input#description-edit"),
+    amount: document.querySelector("input#amount-edit"),
+    date: document.querySelector("input#date-edit"),
+    getValues() {
+        return {
+            description: FormEdit.description.value,
+            amount: FormEdit.amount.value,
+            date: FormEdit.date.value
+        }
+    },
+    validateFields() {
+        const {description, amount, date} = FormEdit.getValues()
+        if(description.trim() === "" || amount.trim() === "" || date.trim() === ""){
+            throw new Error("Por favor, preencha todos os campos.")
+        }
+    },
+    formatValues() {
+        let {description, amount, date} = FormEdit.getValues()
+        
+        amount = Utils.formatAmount(amount)
+        date = Utils.formatDate(date)
+
+        return {
+            description,
+            amount,
+            date
+        }    
+    },
+    clearFields() {
+        FormEdit.description.value = ""
+        FormEdit.amount.value = ""
+        FormEdit.date.value = ""
+    },
+    submit(event) {
+        event.preventDefault()
+
+        try {
+            FormEdit.validateFields()
+            const transaction = FormEdit.formatValues()
+            Transaction.add(transaction)
+            //FormEdit.clearFields()
+            Modal.closeEdit()
         }
         catch (error) {
             alert(error.message)
