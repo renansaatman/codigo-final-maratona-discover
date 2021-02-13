@@ -17,15 +17,10 @@ const Modal = {
         document.querySelector('.modal-overlay-edit').classList.add('active')
         Transaction.remove(index)
     },
-    cancelEdit(){
+    closeEdit(savedTemp = false){
         document.querySelector('.modal-overlay-edit').classList.remove('active')
         FormEdit.clearFields()
-        Transaction.add(Storage.temp)
-    },
-    closeEdit(){
-        document.querySelector('.modal-overlay-edit').classList.remove('active')
-        FormEdit.clearFields()
-        //Transaction.add(Storage.temp)
+        savedTemp && Transaction.add(Storage.temp)
     },
     
 }
